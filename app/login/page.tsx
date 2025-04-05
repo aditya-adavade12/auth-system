@@ -1,5 +1,4 @@
 'use client';
-
 import Link from "next/link";
 import React from "react";
 import { useRef, useState } from "react";
@@ -20,8 +19,6 @@ export default function Login() {
             ...prevValues,
             [name]: value,
         }));
-        console.log(LogValues);
-
     };
     // Return LogValues 
     const returnLogValues = () => {
@@ -63,6 +60,7 @@ export default function Login() {
                 <div>
                     <h2 className="text-xl text-center">Login</h2>
                 </div>
+                {/* User Inputs */}
                 <div className="flex flex-col justify-start gap-2.5 text-white">
                     <div className="flex flex-col">
                         <label htmlFor="username">Username</label>
@@ -78,13 +76,13 @@ export default function Login() {
                         </div>
                     </div>
                     <div className="flex text-[15px]">
-                        <a href="#" className="underline text-blue-600">Forgot Password</a>
+                        <Link href="/forgot" className="underline text-blue-600">Forgot Password</Link>
                     </div>
                     <div className="w-full">
                         <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600" onClick={() => returnLogValues()}>Login Me</button>
                     </div>
                     <div className="text-center">
-                        <p>Not a Member? <Link href="/signup" prefetch={true} className="underline text-blue-600">Register</Link></p>
+                        <p>Not a Member? <Link href="/signup" className="underline text-blue-600">Register</Link></p>
                     </div>
                 </div>
             </div>
