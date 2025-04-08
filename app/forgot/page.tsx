@@ -28,6 +28,9 @@ export default function Forgot() {
                     errorContent.current.textContent = "Invalid Credientials";
                 }
                 }
+        } else {
+            console.log(Email);
+            
         }
     }
     return (

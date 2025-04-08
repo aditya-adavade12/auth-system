@@ -6,19 +6,32 @@ export default function ChangePassword() {
     interface changePasswordType {
         password: number | string;
     }
-    const errorContent = useRef(null);
-    const errorBlock = useRef(null);
-        const [Password, setPassword] = useState<changePasswordType>({
-            password: "",
-        });
-        // Input handler
-        const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-            const { name, value } = e.target;
-            setPassword((prevValues) => ({
-                ...prevValues,
-                [name]: value,
-            }));
-        };
+    const errorBlock = useRef<HTMLDivElement | null>(null);
+    const errorContent = useRef<HTMLSpanElement | null>(null);
+    const [Password, setPassword] = useState<changePasswordType>({
+        password: "",
+    });
+    // Input handler
+    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setPassword((prevValues) => ({
+            ...prevValues,
+            [name]: value,
+        }));
+    };
+    // Return a new password
+    const returnPassword = () => {
+        if (!Password.password) {
+            if (errorBlock.current) {
+                errorBlock.current.style.display = "block";
+                if (errorContent.current) {
+                    errorContent.current.textContent = "Invalid Credientials";
+                }
+            }
+        } else {
+            console.log(Password);
+        }
+    }
     return (
         <div className="my-42">
             <div id="error-block" ref={errorBlock} className="hidden mx-auto mb-4 w-fit border border-stone-800 rounded-lg px-2.5 py-1.5 transition-all">
@@ -36,12 +49,8 @@ export default function ChangePassword() {
                         <label htmlFor="password">New Password</label>
                         <input value={Password.password} onChange={handleInput} type="text" required id="password" name="password" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" />
                     </div>
-                    <div className="flex flex-col">
-                        <label htmlFor="newpassword">Confirm Password</label>
-                        <input value={Password.password} onChange={handleInput} type="text" required id="newpassword" name="newpassword" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" />
-                    </div>
                     <div className="w-full">
-                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600">Change</button>
+                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600" onClick={() =>  returnPassword()}>Change</button>
                     </div>
                     <div className="text-center">
                         <Link href="/" className="text-md underline text-blue-500">Go Home</Link>
