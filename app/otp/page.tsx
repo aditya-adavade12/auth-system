@@ -6,19 +6,33 @@ export default function OTP() {
     interface otpVerify {
         otp: number | string;
     }
-    const errorContent = useRef(null);
-    const errorBlock = useRef(null);
-        const [userOtp, setOtp] = useState<otpVerify>({
-            otp: "",
-        });
-        // Input handler
-        const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-            const { name, value } = e.target;
-            setOtp((prevValues) => ({
-                ...prevValues,
-                [name]: value,
-            }));
-        };
+    const errorBlock = useRef<HTMLDivElement | null>(null);
+    const errorContent = useRef<HTMLSpanElement | null>(null);
+    const [userOtp, setOtp] = useState<otpVerify>({
+        otp: "",
+    });
+    // Input handler
+    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setOtp((prevValues) => ({
+            ...prevValues,
+            [name]: value,
+        }));
+    };
+    // Return OTP to verify
+    const returnOtp = () => {
+        if (!userOtp.otp) {
+            if (errorBlock.current) {
+                errorBlock.current.style.display = "block";
+                if (errorContent.current) {
+                    errorContent.current.textContent = "Invalid Credientials";
+                }
+            }
+        } else {
+            console.log(userOtp);
+            
+        }
+    }
     return (
         <div className="my-42">
             <div id="error-block" ref={errorBlock} className="hidden mx-auto mb-4 w-fit border border-stone-800 rounded-lg px-2.5 py-1.5 transition-all">
@@ -33,11 +47,11 @@ export default function OTP() {
                 {/* User Inputs */}
                 <div className="flex flex-col justify-start gap-2.5 mt-1.5 text-white">
                     <div className="flex flex-col">
-                        <label htmlFor="email">OTP</label>
-                        <input value={userOtp.otp} onChange={handleInput} type="text" required id="email" name="email" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" />
+                        <label htmlFor="otp">OTP</label>
+                        <input value={userOtp.otp} onChange={handleInput} type="text" required id="otp" name="otp" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" />
                     </div>
                     <div className="w-full">
-                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600">Verify</button>
+                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600" onClick={() => returnOtp()}>Verify</button>
                     </div>
                     <div className="text-center">
                         <Link href="/" className="text-md underline text-blue-500">Go Home</Link>

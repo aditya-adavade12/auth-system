@@ -25,14 +25,12 @@ export default function Login() {
         if (!LogValues.password || !LogValues.username) {
             if (errorBlock.current && errorContent.current) {
                 errorContent.current.textContent = "Invalid Credientials!";
-                errorBlock.current.style.color = "#ff1a1a";
                 errorBlock.current.style.display = "block";
             }
         } else {
             if (errorBlock.current && errorContent.current) {
                 errorBlock.current.style.display = "block";
-                errorContent.current.textContent = "Successful";
-                errorContent.current.style.color = "#13ed31";
+                errorContent.current.textContent = "Successful!";
             }
         }
     }
@@ -49,10 +47,21 @@ export default function Login() {
             }
         }
     }
+    // Close Modal
+    const closeBlock = () => {
+        if (errorBlock.current) {
+            errorBlock.current.style.display = "none";
+        }
+    }
     return (
         <div className="my-42">
-            <div id="error-block" ref={errorBlock} className="hidden mx-auto mb-4 w-fit border border-stone-800 rounded-lg px-2.5 py-1.5 transition-all">
-                <span ref={errorContent} className="font-medium"></span>
+            <div id="error-block" ref={errorBlock} className="hidden mx-auto mb-4 w-fit border border-stone-800 rounded-lg px-2.5 py-2.5 transition-all">
+                <span className="flex flex-row items-center gap-8">
+                    <span ref={errorContent} className="font-medium"></span>
+                    <button onClick={() => closeBlock()} className="flex cursor-pointer"><span className="flex material-symbols-outlined">
+                        close
+                    </span></button>
+                </span>
             </div>
             <title>Login Page</title>
             <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />

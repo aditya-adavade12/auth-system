@@ -41,7 +41,7 @@ export default function SignUp() {
             if (errorBlock.current) {
                 errorBlock.current.style.display = "block";
                 if (errorContent.current) {
-                    errorContent.current.textContent = "Please Fill the Fields!";
+                    errorContent.current.textContent = "Invalid Credientials!";
                 }
             }
         } else {
