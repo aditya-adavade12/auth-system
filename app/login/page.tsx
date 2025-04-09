@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 export default function Login() {
     interface userLoginType {
         username: string;
-        password: string | number;
+        password: string;
     }
     const [LogValues, setLogValues] = useState<userLoginType>({
         username: "",
@@ -20,18 +20,20 @@ export default function Login() {
             [name]: value,
         }));
     };
-    // Return LogValues 
+    // Return LogValues  
     const returnLogValues = () => {
         if (!LogValues.password || !LogValues.username) {
-            if (errorBlock.current && errorContent.current) {
-                errorContent.current.textContent = "Invalid Credientials!";
+            if (errorBlock.current) {
                 errorBlock.current.style.display = "block";
+                if (errorContent.current) {
+                    errorContent.current.textContent = "Username and Password are required.";
+                }
             }
-        } else {
-            if (errorBlock.current && errorContent.current) {
-                errorBlock.current.style.display = "block";
-                errorContent.current.textContent = "Successful!";
-            }
+            return;
+        }
+        else {
+            console.log("done");
+            
         }
     }
     const errorBlock = useRef<HTMLDivElement>(null);
@@ -65,12 +67,12 @@ export default function Login() {
             </div>
             <title>Login Page</title>
             <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-            <div id="main-wrapper" className="w-fit border border-stone-800 rounded-lg p-4 mx-auto">
+            <div id="main-wrapper" className="w-fit border border-stone-800 rounded-lg p-4 mx-auto shadow-2xl">
                 <div>
                     <h2 className="text-xl text-center">Login</h2>
                 </div>
                 {/* User Inputs */}
-                <div className="flex flex-col justify-start gap-2.5 text-white">
+                <div className="flex flex-col justify-start gap-2.5">
                     <div className="flex flex-col">
                         <label htmlFor="username">Username</label>
                         <input type="text" required id="username" name="username" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" value={LogValues.username} onChange={handleInput} />
