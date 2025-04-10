@@ -33,7 +33,7 @@ export default function Login() {
         }
         else {
             console.log("done");
-            
+
         }
     }
     const errorBlock = useRef<HTMLDivElement>(null);
@@ -60,7 +60,7 @@ export default function Login() {
             <div id="error-block" ref={errorBlock} className="hidden mx-auto mb-4 w-fit border border-stone-800 rounded-lg px-2.5 py-2.5 transition-all">
                 <span className="flex flex-row items-center gap-8">
                     <span ref={errorContent} className="font-medium"></span>
-                    <button onClick={() => closeBlock()} className="flex cursor-pointer"><span className="flex material-symbols-outlined">
+                    <button onClick={() => closeBlock()} className="flex cursor-pointer text-stone-500"><span className="flex material-symbols-outlined">
                         close
                     </span></button>
                 </span>
@@ -75,12 +75,12 @@ export default function Login() {
                 <div className="flex flex-col justify-start gap-2.5">
                     <div className="flex flex-col">
                         <label htmlFor="username">Username</label>
-                        <input type="text" required id="username" name="username" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" value={LogValues.username} onChange={handleInput} />
+                        <input type="text" required id="username" pattern="^[A-Za-z]+$" title="Username here." name="username" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" value={LogValues.username} onChange={handleInput} />
                     </div>
                     <div className="flex flex-col">
                         <label htmlFor="password">Password</label>
                         <div className="flex flex-row gap-1.5 items-center">
-                            <input ref={passwordCheck} type="text" required id="password" name="password" className="border border-stone-600 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded-lg px-1.5 py-0.5" value={LogValues.password} onChange={handleInput} />
+                            <input ref={passwordCheck} type="password" required id="password" title="Password here." name="password" className="border border-stone-600 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded-lg px-1.5 py-0.5" value={LogValues.password} onChange={handleInput} />
                             <button onClick={() => togglePassword()} className="flex bg-stone-900 p-1 cursor-pointer rounded-lg"><span className="flex material-symbols-outlined">
                                 visibility_off
                             </span></button>
