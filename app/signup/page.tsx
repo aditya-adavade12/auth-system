@@ -36,7 +36,7 @@ export default function SignUp() {
         }));
     };
     // Signup Values
-    const returnSignValues = () => {
+    const returnSignValues = async () => {
         if (!SignValues.username || !SignValues.email || !SignValues.password) {
             if (errorBlock.current) {
                 errorBlock.current.style.display = "block";
@@ -45,11 +45,17 @@ export default function SignUp() {
                 }
             }
         } else {
-            if (errorBlock.current) {
-                errorBlock.current.style.display = "block"
-                if (errorContent.current) {
-                    errorContent.current.textContent = "Success";
-                }
+            try {
+                let req = await fetch('https://localhost:8999/api/signup', {
+                    method: "POST",
+                    body: JSON.stringify(SignValues),
+                    headers: {"Content-Type": "application/json"},
+                });
+                let res = req.json();
+                console.log(res);
+            } catch (e) {
+                console.log(e);
+                
             }
         }
     }
