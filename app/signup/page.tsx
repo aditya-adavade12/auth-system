@@ -44,18 +44,35 @@ export default function SignUp() {
                     errorContent.current.textContent = "Invalid Credientials!";
                 }
             }
-        } else {
-            try {
-                let req = await fetch('https://localhost:8999/api/signup', {
-                    method: "POST",
-                    body: JSON.stringify(SignValues),
-                    headers: {"Content-Type": "application/json"},
-                });
-                let res = req.json();
-                console.log(res);
-            } catch (e) {
-                console.log(e);
-                
+        }
+        try {
+            let req = await fetch('https://localhost:8999/api/signup', {
+                method: "POST",
+                body: JSON.stringify(SignValues),
+                headers: { "Content-Type": "application/json" },
+            });
+            let res = await req.json();
+            if (req.ok) {
+                if (errorBlock.current) {
+                    errorBlock.current.style.display = "block";
+                    if (errorContent.current) {
+                        errorContent.current.textContent = res.message;
+                    }
+                }
+            } else {
+                if (errorBlock.current) {
+                    errorBlock.current.style.display = "block";
+                    if (errorContent.current) {
+                        errorContent.current.textContent = res.message;
+                    }
+                }
+            }
+        } catch (e) {
+            if (errorBlock.current) {
+                errorBlock.current.style.display = "block";
+                if (errorContent.current) {
+                    errorContent.current.textContent = "Internal Server Error!";
+                }
             }
         }
     }
@@ -67,14 +84,16 @@ export default function SignUp() {
     }
     return (
         <div className="my-42">
-            <div id="error-block" ref={errorBlock} className="hidden mx-auto mb-4 w-fit border border-stone-800 rounded-lg px-2.5 py-1.5 transition-all">
-                <span className="flex flex-row items-center gap-4">
+            {/* Error Block */}
+            <div id="error-block" ref={errorBlock} className="hidden mx-auto mb-4 w-fit border border-stone-700 rounded-lg px-2.5 py-1.5 transition-all">
+                <span className="flex flex-row items-center justify-between gap-4">
                     <span ref={errorContent} className="font-medium"></span>
                     <button onClick={() => closeBlock()} className="flex cursor-pointer text-stone-500"><span className="flex material-symbols-outlined">
                         close
                     </span></button>
                 </span>
             </div>
+            {/* Content  */}
             <title>Register Page</title>
             <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
             <div id="main-wrapper" className="w-fit border border-stone-800 rounded-lg p-4 mx-auto shadow-2xl">
