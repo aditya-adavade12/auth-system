@@ -75,11 +75,17 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000);
 };
 
-let storeOTP: any = {};
+interface otpType {
+  otp: number | string;
+  expiresAt: number;
+}
+
+let storeOTP: Record<string, otpType> = {};
 
 const sendOTP = async (mail: string) => {
   let userOTP = generateOTP();
-  storeOTP[mail] = { otp: userOTP, expiresAt: Date.now() + 300000 };
+  let time = Date.now() + 300000;
+  storeOTP[mail] = { otp: userOTP, expiresAt: time };
 
   await transport.sendMail({
     from: '"Auth-Provider" <no-reply@authprovider.com>',
@@ -99,7 +105,7 @@ const sendOTP = async (mail: string) => {
       </div>
     `,
   });
-  console.log("Email Sent");
+  return 1;
 };
 
 // APIs
@@ -145,29 +151,72 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-// API for existing OTP
+// API for OTP verification
 
-app.post("/api/otp", (req, res) => {
-  const { otp } = req.body;
-  try {
-    
-    
-  } catch (error) {}
+app.post("/api/otp/:email", async (req, res) => {
+  let email = req.params.email;
+  let { otp } = req.body;
+  let stored = storeOTP[email];
+
+  if (!stored) {
+    res.status(400).json({ message: "No OTP found for this email!" });
+  }
+
+  if (Date.now() > stored.expiresAt) {
+    delete storeOTP[email];
+    res.status(404).json({ message: "OTP has been expired!" });
+  }
+
+  if (otp == stored.otp) {
+    delete storeOTP[email];
+    let usercollection = db.collection("users");
+    await usercollection.updateOne(
+      { email: email },
+      { $set: { isverified: true } }
+    );
+    res.status(200).json({ message: "true" });
+  } else {
+    res.status(400).json({ message: "false" });
+  }
 });
-
-
-
 
 // Interval to delete expired OTP
 
 setInterval(() => {
   const realTime = Date.now();
+  let expiredcount = 0;
+
   for (let mail in storeOTP) {
     if (storeOTP[mail].expiresAt < realTime) {
+      console.log(`OTP for this ${mail} has expired and will be removed`);
       delete storeOTP[mail];
+      expiredcount++;
     }
   }
-},60000);
+  if (expiredcount > 0) {
+    console.log(`${expiredcount} expired OTPs removed`);
+  }
+}, 300000);
+
+// API for new otp generation
+
+app.post("/api/new", async (req, res) => {
+  let { email } = req.body;
+  let stored = storeOTP[email];
+
+  if (stored) {
+    delete storeOTP[email];
+  }
+
+  let sendResult = await sendOTP(email);
+  if (sendResult) {
+    res
+      .status(200)
+      .json({ message: "We've emailed new otp you a 6-digit OTP." });
+  } else {
+    res.status(400).json({ message: "Failed to send OTP" });
+  }
+});
 
 https.createServer(sslOptions, app).listen(port, () => {
   console.log("Server is Running");
