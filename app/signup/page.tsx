@@ -70,8 +70,7 @@ export default function SignUp() {
                         btnref.current.textContent = "Please Wait...";
                         btnref.current.style.opacity = "0.9";
                     }
-                    sessionStorage.setItem("fromSignup", "true");
-                    router.push(`/otp?email=${SignValues.email}`);
+                    router.push(`/otp?email=${SignValues.email}&fromSignup=1`);
                 } else {
                     if (errorBlock.current) {
                         errorBlock.current.style.display = "block";
