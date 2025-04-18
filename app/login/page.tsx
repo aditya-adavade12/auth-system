@@ -5,11 +5,11 @@ import { useRef, useState } from "react";
 
 export default function Login() {
     interface userLoginType {
-        username: string;
+        email: string;
         password: string;
     }
     const [LogValues, setLogValues] = useState<userLoginType>({
-        username: "",
+        email: "",
         password: "",
     });
     // Input handler
@@ -20,19 +20,64 @@ export default function Login() {
             [name]: value,
         }));
     };
+    const btnref = useRef<HTMLButtonElement | null>(null);
     // Return LogValues  
-    const returnLogValues = () => {
-        if (!LogValues.password || !LogValues.username) {
+    const returnLogValues = async () => {
+        if (!LogValues.password || !LogValues.email) {
             if (errorBlock.current) {
                 errorBlock.current.style.display = "block";
                 if (errorContent.current) {
-                    errorContent.current.textContent = "Username and Password are required.";
+                    errorContent.current.textContent = "Email and Password are required.";
                 }
             }
             return;
         }
         else {
-            console.log("done");
+            if (btnref.current) {
+                btnref.current.textContent = "Please Wait...";
+                btnref.current.disabled = true;
+                btnref.current.style.opacity = "0.8";
+            }
+            try {
+                let req = await fetch("https://localhost:8999/api/login", {
+                    method: "POST",
+                    headers: {"Content-Type" : "application/json"},
+                    body: JSON.stringify(LogValues),
+                });
+                let res = await req.json();
+                if (req.ok) {
+                    if (errorBlock.current) {
+                        errorBlock.current.style.display = "block";
+                        if (errorContent.current) {
+                            errorContent.current.textContent = res.message;
+                        }
+                    }
+                } else {
+                    if (errorBlock.current) {
+                        errorBlock.current.style.display = "block";
+                        if (errorContent.current) {
+                            errorContent.current.textContent = res.message;
+                        }
+                    }
+                    if (btnref.current) {
+                        btnref.current.textContent = "Login Me";
+                        btnref.current.style.opacity = "1";
+                        btnref.current.disabled = false;
+                    }
+                }
+            } catch (e) {
+                if (btnref.current) {
+                    btnref.current.disabled = false;
+                    btnref.current.textContent = "Login Me";
+                    btnref.current.style.opacity = "1";
+                }
+                if (errorBlock.current) {
+                    errorBlock.current.style.display = "block";
+                    if (errorContent.current) {
+                        errorContent.current.textContent = "Internal Server Error! " + e; 
+                    }
+                }
+            }
 
         }
     }
@@ -74,8 +119,8 @@ export default function Login() {
                 {/* User Inputs */}
                 <div className="flex flex-col justify-start gap-2.5">
                     <div className="flex flex-col">
-                        <label htmlFor="username">Username</label>
-                        <input type="text" required id="username" pattern="^[A-Za-z]+$" title="Username here." name="username" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" value={LogValues.username} onChange={handleInput} />
+                        <label htmlFor="email">Email</label>
+                        <input type="email" required id="email" pattern="^[A-Za-z]+$" title="Email here." name="email" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" value={LogValues.email} onChange={handleInput} />
                     </div>
                     <div className="flex flex-col">
                         <label htmlFor="password">Password</label>
@@ -90,7 +135,7 @@ export default function Login() {
                         <Link href="/forgot" className="underline text-blue-600">Forgot Password</Link>
                     </div>
                     <div className="w-full">
-                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600" onClick={() => returnLogValues()}>Login Me</button>
+                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600" onClick={() => returnLogValues()} ref={btnref}>Login Me</button>
                     </div>
                     <div className="text-center">
                         <p>Not a Member? <Link href="/signup" className="underline text-blue-600">Register</Link></p>
