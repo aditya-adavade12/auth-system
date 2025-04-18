@@ -8,6 +8,36 @@ import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import nodemailer from "nodemailer";
+import session from "express-session";
+import connectMongo from "connect-mongo";
+
+import "express-session";
+
+declare module "express-session" {
+  // Extending SessionData to include a user object
+  interface SessionData {
+    user?: {
+      email: string;
+    };
+  }
+}
+
+// Database Connection & env
+
+dotenv.config();
+let db_url = process.env.MONGO_URI;
+let db: Db;
+
+const client = new MongoClient(db_url || "");
+
+async function main() {
+  await client.connect();
+  db = client.db("auth");
+  console.log("Connected to Database");
+  return true;
+}
+
+main();
 
 const app = express();
 const port = 8999;
@@ -15,6 +45,28 @@ const port = 8999;
 // Middleware
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Session
+
+const clientPromise = client.connect().then(() => client);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET as string,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false,
+      maxAge: 1000 * 60 * 60, // 1 Hr
+    },
+    store: connectMongo.create({
+      clientPromise,
+      collectionName: "sessions",
+    }),
+  })
+);
 
 // Security Hardening
 
@@ -42,23 +94,6 @@ app.use((req, res, next) => {
     res.redirect("https://" + req.headers.host + req.url);
   }
 });
-
-// Database Connection & env
-
-dotenv.config();
-let db_url = process.env.MONGO_URI;
-let db: Db;
-
-const client = new MongoClient(db_url || "");
-
-async function main() {
-  await client.connect();
-  db = client.db("auth");
-  console.log("Connected to Database");
-  return true;
-}
-
-main();
 
 // OTP Generation & Sending
 
@@ -130,6 +165,7 @@ app.post("/api/signup", async (req, res) => {
       userid: generateID,
       created_at: currentDate,
       isverified: false,
+      loginattempt: 0,
     };
 
     const usercollection = db.collection("users");
@@ -148,6 +184,16 @@ app.post("/api/signup", async (req, res) => {
     }
   } catch (e) {
     res.status(500).json({ message: "Internal Server Error!" });
+  }
+});
+
+app.get("/api/session", (req, res) => {
+  if (req.session.user) {
+    res
+      .status(200)
+      .json({ message: "User is logged in", user: req.session.user });
+  } else {
+    res.status(401).json({ message: "No active session" });
   }
 });
 
@@ -174,9 +220,13 @@ app.post("/api/otp/:email", async (req, res) => {
       { email: email },
       { $set: { isverified: true } }
     );
-    res.status(200).json({ message: "true" });
+
+    // Creating sesion for the user
+    req.session.user = { email };
+
+    res.status(200).json({ message: "Verified User" });
   } else {
-    res.status(400).json({ message: "false" });
+    res.status(400).json({ message: "Failed" });
   }
 });
 
@@ -215,6 +265,49 @@ app.post("/api/new", async (req, res) => {
       .json({ message: "We've emailed new otp you a 6-digit OTP." });
   } else {
     res.status(400).json({ message: "Failed to send OTP" });
+  }
+});
+
+// API for Login
+
+app.post("/api/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    let usercollection = db.collection("users");
+    // Find the user and Spam protection
+    let findUser = await usercollection.findOne({ email });
+    if (!findUser) {
+      res.status(404).json({ message: "User not found!" });
+    } else if (findUser.loginattempt > 3) {
+      res.status(400).json({
+        message: "Account is Blocked due too many login attempts",
+        terminate: true,
+      });
+    } else {
+      // Matching the conditions;
+      if (findUser) {
+        const matchPassword = await bcrypt.compare(password, findUser.password);
+        if (matchPassword) {
+          res.status(200).json({ message: "User Found" });
+          await usercollection.updateOne(
+            { email },
+            { $set: { loginattempt: 0 } }
+          );
+        } else {
+          await usercollection.updateOne(
+            { email },
+            { $inc: { loginattempt: 1 } }
+          );
+          res.status(404).json({ message: "Incorrect Password" });
+        }
+      } else {
+        res.status(400).json({ message: "User Not Exist" });
+      }
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal Server Error!", systemError: error });
   }
 });
 
