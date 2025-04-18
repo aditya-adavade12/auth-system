@@ -101,6 +101,7 @@ export default function OTP() {
                             errorContent.current.textContent = res.message;
                         }
                     }
+                    router.push("/home");
                 } else {
                     if (errorBlock.current) {
                         errorBlock.current.style.display = "block";
