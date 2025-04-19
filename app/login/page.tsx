@@ -1,9 +1,11 @@
 'use client';
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { useRef, useState } from "react";
 
 export default function Login() {
+    const router = useRouter();
     interface userLoginType {
         email: string;
         password: string;
@@ -52,6 +54,8 @@ export default function Login() {
                             errorContent.current.textContent = res.message;
                         }
                     }
+                    router.push("/home");
+            
                 } else {
                     if (errorBlock.current) {
                         errorBlock.current.style.display = "block";
