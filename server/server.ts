@@ -3,7 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import https from "https";
 import fs from "fs";
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, Timestamp } from "mongodb";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
@@ -121,24 +121,24 @@ const sendOTP = async (mail: string) => {
   let userOTP = generateOTP();
   let time = Date.now() + 300000;
   storeOTP[mail] = { otp: userOTP, expiresAt: time };
-
+  // Check OTP exist on the server
   await transport.sendMail({
     from: '"Auth-Provider" <no-reply@authprovider.com>',
     to: `${mail}`,
     subject: "Email Verification Code",
     html: `
-      <div style="font-family: Arial, sans-serif; color: #333;">
-        <h2 style="color: #2a7d9a;">Email Verification</h2>
-        <p>Dear User,</p>
-        <p>Thank you for choosing to use our services. To verify your email address, please use the following one-time password (OTP):</p>
-        <h3 style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-size: 18px; color: #333;">${userOTP}</h3>
-        <p>This OTP is valid for the next 5 minutes.</p>
-        <p>If you did not request this, please ignore this message.</p>
-        <p>Best regards,</p>
-        <p style="font-weight: bold;">The Auth-Provider Team</p>
-        <p style="font-size: 12px; color: #888;">If you have any questions or issues, feel free to reach out to our support team.</p>
-      </div>
-    `,
+        <div style="font-family: Arial, sans-serif; color: #333;">
+          <h2 style="color: #2a7d9a;">Email Verification</h2>
+          <p>Dear User,</p>
+          <p>Thank you for choosing to use our services. To verify your email address, please use the following one-time password (OTP):</p>
+          <h3 style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; font-size: 18px; color: #333;">${userOTP}</h3>
+          <p>This OTP is valid for the next 5 minutes.</p>
+          <p>If you did not request this, please ignore this message.</p>
+          <p>Best regards,</p>
+          <p style="font-weight: bold;">The Auth-Provider Team</p>
+          <p style="font-size: 12px; color: #888;">If you have any questions or issues, feel free to reach out to our support team.</p>
+        </div>
+      `,
   });
   return 1;
 };
@@ -211,6 +211,7 @@ app.post("/api/otp/:email", async (req, res) => {
   if (Date.now() > stored.expiresAt) {
     delete storeOTP[email];
     res.status(404).json({ message: "OTP has been expired!" });
+    return;
   }
 
   if (otp == stored.otp) {
@@ -246,7 +247,7 @@ setInterval(() => {
   if (expiredcount > 0) {
     console.log(`${expiredcount} expired OTPs removed`);
   }
-}, 300000);
+}, 3000000);
 
 // API for new otp generation
 
@@ -280,34 +281,113 @@ app.post("/api/login", async (req, res) => {
       res.status(404).json({ message: "User not found!" });
     } else if (findUser.loginattempt > 3) {
       res.status(400).json({
-        message: "Account is Blocked due too many login attempts",
+        message:
+          "Account is Blocked due too many login attempts, try again after some time!",
         terminate: true,
       });
+      return;
     } else {
       // Matching the conditions;
-      if (findUser) {
-        const matchPassword = await bcrypt.compare(password, findUser.password);
-        if (matchPassword) {
-          res.status(200).json({ message: "User Found" });
-          await usercollection.updateOne(
-            { email },
-            { $set: { loginattempt: 0 } }
-          );
-        } else {
-          await usercollection.updateOne(
-            { email },
-            { $inc: { loginattempt: 1 } }
-          );
-          res.status(404).json({ message: "Incorrect Password" });
-        }
+      const matchPassword = await bcrypt.compare(password, findUser.password);
+      if (matchPassword) {
+        res.status(200).json({ message: "User Found" });
+        req.session.user = { email };
+        await usercollection.updateOne(
+          { email },
+          { $set: { loginattempt: 0 } }
+        );
       } else {
-        res.status(400).json({ message: "User Not Exist" });
+        await usercollection.updateOne(
+          { email },
+          { $inc: { loginattempt: 1 } }
+        );
+        res.status(404).json({ message: "Incorrect Password" });
       }
     }
   } catch (error) {
     res
       .status(500)
       .json({ message: "Internal Server Error!", systemError: error });
+  }
+});
+
+// API for Forgot password
+
+app.use("/api/forgot", async (req, res) => {
+  try {
+    let { email } = req.body;
+    let usercollection = db.collection("users");
+    let findUser = await usercollection.findOne({ email });
+    if (findUser) {
+      sendOTP(email);
+      res.status(200).json({ message: "User Found!" });
+    } else {
+      res.status(404).json({ message: "User Does not Exist" });
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal Server Error!", systemError: error });
+  }
+});
+
+app.use("/api/change", async (req, res) => {
+  try {
+    let { email, password } = req.body;
+    let usercollection = db.collection("users");
+    let hashedpassword = await bcrypt.hash(password, 10);
+    let findUser = await usercollection.findOne({ email });
+    if (findUser) {
+      let setPassword = await usercollection.updateOne(
+        { email },
+        { $set: { password: hashedpassword } }
+      );
+      if (setPassword) {
+        res
+          .status(200)
+          .json({ message: "Password has been change now u can Login" });
+      } else {
+        res.status(404).json({ message: "Failed to Change password" });
+      }
+    } else {
+      res.status(404).json({ message: "User not Found!" });
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal Server Error!", systemError: error });
+  }
+});
+
+// API to Logout the user
+
+app.delete("/api/destroysession/:email", async (req, res) => {
+  const { email } = req.body;
+  try {
+    const sessionCollection = db.collection("sessions");
+
+    // Find sessions containing this email
+    const sessions = await sessionCollection
+      .find({
+        session: { $regex: email },
+      })
+      .toArray();
+
+    if (sessions.length === 0) {
+      res
+        .status(404)
+        .json({ message: "No active session found for this user" });
+    }
+
+    // Delete those sessions
+    const sessionIds = sessions.map((sess) => sess._id);
+    await sessionCollection.deleteMany({ _id: { $in: sessionIds } });
+
+    res
+      .status(200)
+      .json({ message: `Sessions for ${email} have been destroyed` });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to destroy sessions", error });
   }
 });
 
