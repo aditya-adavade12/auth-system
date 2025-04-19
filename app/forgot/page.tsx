@@ -1,8 +1,10 @@
 'use client';
 import Link from "next/link"
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react"
 
 export default function Forgot() {
+    const router = useRouter();
     interface changePassword {
         email: string | any;
     }
@@ -19,8 +21,9 @@ export default function Forgot() {
             [name]: value,
         }));
     };
+    const btnref = useRef<HTMLButtonElement | null>(null);
     // Return OTP
-    const returnOtp = () => {
+    const returnOtp = async () => {
         if (!Email.email) {
             if (errorBlock.current) {
                 errorBlock.current.style.display = "block";
@@ -29,8 +32,57 @@ export default function Forgot() {
                 }
             }
         } else {
-            console.log(Email);
-
+            if (btnref.current) {
+                btnref.current.textContent = "Please Wait..";
+                btnref.current.disabled = true;
+                btnref.current.style.opacity = "0.8";
+            }
+            try {
+                let req = await fetch("https://localhost:8999/api/forgot", {
+                    headers: {"Content-Type" : "application/json"},
+                    method: "POST",
+                    body: JSON.stringify(Email),
+                });
+                let res = await req.json();
+                if (req.ok) {
+                    if (errorBlock.current) {
+                        errorBlock.current.style.display = "block";
+                        if (errorContent.current) {
+                            errorContent.current.textContent = res.message;
+                        }
+                    }
+                    if (btnref.current) {
+                        btnref.current.textContent = "Send OTP";
+                        btnref.current.disabled = false;
+                        btnref.current.style.opacity = "0.8";
+                    }
+                    router.push(`/otp?email=${Email.email}&fromPassword=true`);
+                } else {
+                    if (errorBlock.current) {
+                        errorBlock.current.style.display = "block";
+                        if (errorContent.current) {
+                            errorContent.current.textContent = res.message;
+                        }
+                    }
+                    if (btnref.current) {
+                        btnref.current.textContent = "Send OTP";
+                        btnref.current.disabled = false;
+                        btnref.current.style.opacity = "1";
+                    }
+                }
+            } catch (error) {
+                if (errorBlock.current) {
+                    errorBlock.current.style.display = "block";
+                    if (errorContent.current) {
+                        errorContent.current.textContent = "Internal Server Error! " + error;
+                    }
+                }
+                if (btnref.current) {
+                    btnref.current.textContent = "Send OTP";
+                    btnref.current.disabled = false;
+                    btnref.current.style.opacity = "1";
+                }
+            }
         }
     }
     // Close the modal 
@@ -62,7 +114,7 @@ export default function Forgot() {
                         <input value={Email.email} onChange={handleInput} type="text" required id="email" name="email" className="focus:ring-2 focus:ring-blue-500 focus:outline-none border border-stone-600 outline-none rounded-lg px-1.5 py-0.5" />
                     </div>
                     <div className="w-full">
-                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600" onClick={() => returnOtp()}>Send OTP</button>
+                        <button className="w-full bg-blue-500 text-white py-1.5 rounded-lg cursor-pointer hover:bg-blue-600" ref={btnref} onClick={() => returnOtp()}>Send OTP</button>
                     </div>
                     <div className="text-center">
                         <Link href="/" className="text-md underline text-blue-500">Go Home</Link>
